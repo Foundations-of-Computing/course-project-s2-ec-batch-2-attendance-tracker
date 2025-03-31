@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable</title>
+    <link rel="stylesheet" href="timestyles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="blurred-bg"></div>
+        <div class="time">
+        <div class="content">
+            <!-- Subject Entry Section -->
+            <div class="SubjectEntry">
+                <h2>Enter Subjects</h2>
+                <input type="text" id="subjectInput" placeholder="Enter a subject">
+                <button onclick="addSubject()">Add Subject</button>
+                <p id="errorMessage" style="color: red;"></p>
+                <h4>Subjects Added:</h4>
+                <ul id="subjectList"></ul>
+            </div>
+
+            <!-- Timetable Section -->
+            <div class="Timetable">
+                <h1>Timetable</h1>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Monday</th>
+                            <th>Tuesday</th>
+                            <th>Wednesday</th>
+                            <th>Thursday</th>
+                            <th>Friday</th>
+                        </tr>
+                    </thead>
+                    <tbody id="timetableBody">
+                        <!-- Timetable rows will be generated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+   <script>
+        let subjects = JSON.parse(localStorage.getItem("subjects")) || [];
+        let subjectCount = JSON.parse(localStorage.getItem("timetable")) || {};
+
+        function addSubject() {
+            let subjectInput = document.getElementById("subjectInput").value.trim();
+            let errorMessage = document.getElementById("errorMessage");
+            
+            if (subjectInput === "") {
+                errorMessage.textContent = "Please enter a subject.";
+                return;
+            }
+            
+            if (subjects.includes(subjectInput)) {
+                errorMessage.textContent = "Subject already exists!";
+                return;
+            }
+            
+            subjects.push(subjectInput);
+            localStorage.setItem("subjects", JSON.stringify(subjects));
+            errorMessage.textContent = "";
+            document.getElementById("subjectInput").value = "";
+            updateSubjectList();
+            updateDropdowns();
+        }
+        
+        function updateSubjectList() {
+            let subjectList = document.getElementById("subjectList");
+            subjectList.innerHTML = "";
+            subjects.forEach((subject, index) => {
+                let li = document.createElement("li");
+                li.textContent = subject;
+                let deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.style.marginLeft = "10px";
+                deleteButton.onclick = function() { deleteSubject(index); };
+                li.appendChild(deleteButton);
+                subjectList.appendChild(li);
+            });
+        }
+        
+        function deleteSubject(index) {
+            subjects.splice(index, 1);
+            localStorage.setItem("subjects", JSON.stringify(subjects));
+            updateSubjectList();
+            updateDropdowns();
+        }
+
+        function updateDropdowns() {
+            let dropdowns = document.querySelectorAll(".subject-dropdown");
+            dropdowns.forEach(dropdown => {
+                dropdown.innerHTML = "";
+                let defaultOption = document.createElement("option");
+                defaultOption.value = "";
+                defaultOption.textContent = "Select Subject";
+                dropdown.appendChild(defaultOption);
+                subjects.forEach(subject => {
+                    let option = document.createElement("option");
+                    option.value = subject;
+                    option.textContent = subject;
+                    dropdown.appendChild(option);
+                });
+            });
+        }
+        
+        function generateTimetable() {
+            let timetableBody = document.getElementById("timetableBody");
+            timetableBody.innerHTML = "";
+            let periods = [
+                "9:00 am - 10:00 am",
+                "10:00 am - 11:00 am",
+                "11:00 am - 12:00 pm",
+                "1:00 pm - 2:00 pm",
+                "2:00 pm - 3:00 pm",
+                "3:00 pm - 4:00 pm"
+            ];
+            
+            subjectCount = {}; // Reset count
+            
+            periods.forEach(timeSlot => {
+                let row = document.createElement("tr");
+                let timeCell = document.createElement("td");
+                timeCell.textContent = timeSlot;
+                row.appendChild(timeCell);
+                for (let i = 0; i < 5; i++) {
+                    let cell = document.createElement("td");
+                    let select = document.createElement("select");
+                    select.classList.add("subject-dropdown");
+                    let defaultOption = document.createElement("option");
+                    defaultOption.value = "";
+                    defaultOption.textContent = "Select Subject";
+                    select.appendChild(defaultOption);
+                    select.addEventListener("change", updateSubjectCount);
+                    cell.appendChild(select);
+                    row.appendChild(cell);
+                }
+                timetableBody.appendChild(row);
+            });
+            updateDropdowns();
+        }
+        
+        function updateSubjectCount() {
+            subjectCount = {}; // Reset subject count
+            document.querySelectorAll(".subject-dropdown").forEach(dropdown => {
+                let selectedSubject = dropdown.value;
+                if (selectedSubject) {
+                    subjectCount[selectedSubject] = (subjectCount[selectedSubject] || 0) + 1;
+                }
+            });
+            localStorage.setItem("timetable", JSON.stringify(subjectCount));
+        }
+
+        updateSubjectList();
+        generateTimetable();
+    </script>
+ 
+</body>
+</html>
