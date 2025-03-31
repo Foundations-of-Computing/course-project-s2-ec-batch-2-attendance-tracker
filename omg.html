@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('mama.webp') no-repeat center center fixed;
+            background-size: cover;
+            position: relative;
+            text-align: center;
+        }
+        
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            filter: blur(5px); /* Increased blur strength */
+            z-index: -1;
+        }
+        
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        select, input {
+            padding: 8px;
+            width: 90%;
+        }
+        
+        button {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body onload="loadSubjects()">
+    <div class="container">
+        <h1>Attendance Tracker</h1>
+        <button onclick="clearSubjects()">Clear Subjects</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>No. of Classes Taken So Far</th>
+                    <th>Total Classes</th>
+                    <th>Attended Classes</th>
+                    <th>Percentage Required</th>
+                    <th>Attendance Percentage</th>
+                    <th>Skippable Classes</th>
+                    <th>Classes to Attend</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+            </tbody>
+        </table>
+        <button onclick="calculateAttendance()">Calculate Attendance</button>
+    </div>
+    <script>
+        function loadSubjects() {
+            let storedSubjects = JSON.parse(localStorage.getItem("subjects")) || [];
+            let tbody = document.getElementById("attendanceTableBody");
+            tbody.innerHTML = "";
+            
+            storedSubjects.forEach((subject, index) => {
+                let row = document.createElement("tr");
+                row.innerHTML = `
+                    <td><select class="subject-dropdown"><option value="${subject}">${subject}</option></select></td>
+                    <td><input type="number" name="classesTaken"></td>
+                    <td><input type="number" name="totalClasses"></td>
+                    <td><input type="number" name="attendedClasses"></td>
+                    <td><input type="number" name="requiredPercentage"></td>
+                    <td><input type="text" name="attendancePercentage" readonly></td>
+                    <td><input type="text" name="skippableClasses" readonly></td>
+                    <td><input type="text" name="classesToAttend" readonly></td>
+                    <td><button onclick="deleteSubject(${index})">Delete</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function calculateAttendance() {
+            document.querySelectorAll("tbody tr").forEach(row => {
+                let classesTaken = parseInt(row.querySelector("input[name='classesTaken']").value) || 0;
+                let totalClasses = parseInt(row.querySelector("input[name='totalClasses']").value) || 0;
+                let attendedClasses = parseInt(row.querySelector("input[name='attendedClasses']").value) || 0;
+                let requiredPercentage = parseFloat(row.querySelector("input[name='requiredPercentage']").value) || 0;
+                let attendancePercentageField = row.querySelector("input[name='attendancePercentage']");
+                let skippableClassesField = row.querySelector("input[name='skippableClasses']");
+                let classesToAttendField = row.querySelector("input[name='classesToAttend']");
+
+                if (classesTaken > 0) {
+                    let percentage = (attendedClasses / classesTaken) * 100;
+                    attendancePercentageField.value = percentage.toFixed(2) + "%";
+                    
+                    let requiredClasses = Math.ceil((requiredPercentage / 100) * totalClasses);
+                    let skippableClasses = totalClasses - requiredClasses - (classesTaken - attendedClasses);
+                    
+                    if (skippableClasses >= 0) {
+                        skippableClassesField.value = skippableClasses;
+                        classesToAttendField.value = "0";
+                    } else {
+                        skippableClassesField.value = "0";
+                        classesToAttendField.value = Math.abs(skippableClasses);
+                    }
+                } else {
+                    attendancePercentageField.value = "N/A";
+                    skippableClassesField.value = "N/A";
+                    classesToAttendField.value = "N/A";
+                }
+            });
+        }
+
+        function clearSubjects() {
+            localStorage.removeItem("subjects");
+            loadSubjects();
+        }
+
+        function deleteSubject(index) {
+            let storedSubjects = JSON.parse(localStorage.getItem("subjects")) || [];
+            storedSubjects.splice(index, 1);
+            localStorage.setItem("subjects", JSON.stringify(storedSubjects));
+            loadSubjects();
+        }
+    </script>
+</body>
+</html>
